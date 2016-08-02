@@ -1,0 +1,9 @@
+﻿  local_client_program_V2.0.cpp
+c:\users\xavi\documents\visual studio 2015\projects\local_client_program_v2.0\local_client_program_v2.0\local_client_program_v2.0.cpp(9): warning C4005: '_CRT_SECURE_NO_WARNINGS': macro redefinition
+  c:\users\xavi\documents\visual studio 2015\projects\local_client_program_v2.0\local_client_program_v2.0\local_client_program_v2.0.cpp(9): note: command-line arguments:  see previous definition of '_CRT_SECURE_NO_WARNINGS'
+c:\users\xavi\documents\visual studio 2015\projects\local_client_program_v2.0\local_client_program_v2.0\local_client_program_v2.0.cpp(342): warning C4018: '<': signed/unsigned mismatch
+c:\users\xavi\documents\visual studio 2015\projects\local_client_program_v2.0\local_client_program_v2.0\local_client_program_v2.0.cpp(430): warning C4474: 'printf' : too many arguments passed for format string
+  c:\users\xavi\documents\visual studio 2015\projects\local_client_program_v2.0\local_client_program_v2.0\local_client_program_v2.0.cpp(430): note: placeholders and their parameters expect 1 variadic arguments, but 2 were provided
+c:\users\xavi\documents\visual studio 2015\projects\local_client_program_v2.0\local_client_program_v2.0\local_client_program_v2.0.cpp(426): warning C4101: 'taskbar_sz': unreferenced local variable
+c:\users\xavi\documents\visual studio 2015\projects\local_client_program_v2.0\local_client_program_v2.0\local_client_program_v2.0.cpp(251): warning C4715: 'client': not all control paths return a value
+  local_client_program_V2.0.vcxproj -> C:\Users\xavi\Documents\Visual Studio 2015\Projects\local_client_program_V2.0\Debug\local_client_program_V2.0.exe
