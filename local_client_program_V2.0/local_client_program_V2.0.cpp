@@ -6,14 +6,13 @@
 // header files
 #include "stdafx.h"
 
-#define _CRT_SECURE_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 
 #include <io.h>
 #include<iostream>
 #include <stdio.h>
 
-#define _CRT_SECURE_NO_WARNINGS
 #include<string.h>
 #include<time.h>
 #include<winsock2.h>
@@ -23,30 +22,9 @@
 #include <Tlhelp32.h>
 #include <winbase.h>
 #pragma comment(lib,"Ws2_32.lib")
-#define DEFAULT_BUFLEN 1024
-#define DEFAULT_PORT "80"
-#define path "C:\\oneirV1.0\\"
-#define path_to_ini_file  "C:\\oneirV1.0\\credential.ini"
-#define telnet98 "C:\\oneirV1.0\\Dev3-Cenedex.etx"
-#define terminal "C:\\oneirV1.0\\terminal.etx"
-#define username 0
-#define session_file_1 1
-#define session_file_2 2
-#define session_file_3 3
-#define CREDENTIAL_SIZE_LIMIT 4
-#define CREDENTIAL_SPACE 100
-#define REMOTE_HOST_IP "sleepy-mesa-60780.herokuapp.com"
-using namespace std;
-// global variable
-int choice = 0;
-int CREDENTIALS_SIZE = 0;
-char* credentials[CREDENTIAL_SIZE_LIMIT];
-// Macros
-#define _ETNAPI_H
-#define ETNBUFSIZ       0x2000
-HWND erik98 = NULL;
+#include "tagSession.h"
+#include "globals.h"
 
-// aliases for function pointers
 typedef VOID(CALLBACK* ETNDATAPROC)(HWND, LPBYTE, DWORD);
 typedef BOOL(__stdcall *etnEnableInput)(HWND hSession, BOOL bEnable);
 typedef BOOL(__stdcall *etnIsSession)(HWND hSession);
@@ -56,6 +34,10 @@ typedef BOOL(__stdcall *etnRegisterCallback)(HWND hSession, ETNDATAPROC lpDataPr
 typedef BOOL(__stdcall *etnReleaseHandle)(HWND hSession);
 typedef BOOL(__stdcall *etnSendData)(HWND hSession, LPBYTE lpData, DWORD cbData);
 typedef BOOL(__stdcall *etnSetDelay)(DWORD dwMilliseconds);
+typedef BOOL(__stdcall *etnReadSession)(LPBYTE filepath, tagSESSION *session);
+typedef BOOL(__stdcall *etnWriteSession)(LPBYTE filepath, tagSESSION *session);
+
+
 
 // loads the .DLL provided by Erik's Telnet98
 static HANDLE GetEtnApi(void)
@@ -177,6 +159,34 @@ VOID WINAPI xetnSetDelay(DWORD dwMilliseconds)
 	if (x)
 		x(dwMilliseconds);
 } // etnSetDelay
+
+
+  // wrapper function for etnSetDelay which is loaded from the .DLL file
+BOOL WINAPI xetnReadSession(LPBYTE filepath, tagSESSION *session)
+{
+	static etnReadSession x = NULL;
+	if (!x)
+		x = (etnReadSession)GetProcAddress((HMODULE)GetEtnApi(), "etnReadSession");
+	if (x)
+		return x(filepath, session);
+	printf("ERROR %d \n", GetLastError());
+	return FALSE;
+} // etnReadSession
+
+
+
+
+  // wrapper function for etnSetDelay which is loaded from the .DLL file
+BOOL WINAPI xetnWriteSession(LPBYTE filepath, tagSESSION *session)
+{
+	static etnWriteSession x = NULL;
+	if (!x)
+		x = (etnWriteSession)GetProcAddress((HMODULE)GetEtnApi(), "etnWriteSession");
+	if (x)
+		return x(filepath, session);
+	return FALSE;
+} // etnWriteSession
+
 
   /*
   *  temporary function which extracts a character from a char* and store it into global variable 'choice'
@@ -359,68 +369,77 @@ void GetDesktopResolution(int& horizontal, int& vertical)
 
 void resizeApps(int v, int h)
 {
-	//HWND chrome = GetWindow(chromeWindow,GW_HWNDNEXT);
-	//tn98FrameClass
-	//MozillaWindowClass
-	//Chrome_WidgetWin_1
-	// try 0x0200 instead of 0x0400  SWP_NOZORDER
-	// for google chrome
+	// create an Windows Handler Object
 	HWND Window = NULL;
-
+	// get the handle of current running telnet98 Windows
 	Window = FindWindowEx(0, Window, L"tn98FrameClass", 0);
+	// check if handle exists, if it exists then adjust the telnet98 size and position
 	if (Window != NULL)
 		SetWindowPos(Window, HWND_TOPMOST, (h * 25) / 100, 0, (h * 75) / 100, v - 50, 0x0400);
-
+	// check if handle exists, if it exists then adjust the telnet98 size and position
 	Window = xetnObtainHandle(NULL, (DWORD)1000);
+	// check if handle exists, if it exists then adjust the telnet98 size and position
 	if (Window != NULL)
 		SetWindowPos(Window, HWND_TOPMOST, (h * 25) / 100, 0, (h * 75) / 100, v - 50, 0x0400);
 }
-
+// end of resizeApps
 // grab user's credential from credentials .ini
 void readCredentials(char** array)
 {
-   
+   // get a file pointer to .INI file
 	FILE* credential_file = fopen(path_to_ini_file, "r");
+  // file doesnt exist
 	if (credential_file == NULL)
 	{
 		printf("Error reading credentials.Please check credential.ini file.");
 		return;
 	}
-      
+  // hard-code the path folder to Session File i.e .ETX file
 	for (int j = 1; j < CREDENTIAL_SIZE_LIMIT; ++j)
 		strcpy(array[j], path);
-
+	// counter temp variable
 	int i = 0;
+	// small space for holding the usernama and .ETX file
 	char buffer[1000];
-	while (fscanf(credential_file, "%s\n", buffer) != EOF && i < CREDENTIAL_SIZE_LIMIT)
+	// read data from the file until hit EOF
+	while (fscanf(credential_file, "%s : %s\n", buffer, buffer) != EOF && i < CREDENTIAL_SIZE_LIMIT)
 	{
+		// check for buffer over-flows
 		if (strlen(buffer) + strlen(path) > CREDENTIAL_SPACE - 1 )
 		{
 			printf("Too long filename size in credential.ini.\n");
 			return;
 		}
-
+		// when data read is not user's email/username
 		if (i != 0)
 			strcat(array[i], buffer);
+		// when data read is name of .ETX file
 		else
 			strcpy(array[i], buffer);
 
 		// for debugging print data
-		//printf("%s\n\t\t\tLenght=%d\n\n", array[i],strlen(array[i]));
+		// printf("%s\n\t\t\tLenght=%d\n\n", array[i],strlen(array[i]));
 		// increment the counter
 		i++;
 	}
+	// let the global world know, the size of credentials
 	CREDENTIALS_SIZE = i;
+	// close the file
 	fclose(credential_file);
 }
+// end of readCredentials
 
 // intialize gloabal array for storing Credentials i.e username, session file names etc
 void initCredentials(char** array)
 {
+	// iterate over each pointer
 	for (int i = 0; i < CREDENTIAL_SIZE_LIMIT; i++)
+		// allocate 100 bytes for each pointer
 		array[i] = new char[100];
 
 }
+//end of initCredentials
+
 int main(void)
 {
 	int vert, horz, taskbar_sz;
